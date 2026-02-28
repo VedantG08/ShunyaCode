@@ -7,6 +7,7 @@ import Controls from './Controls';
 import Chat from './Chat';
 import Participants from './Participants';
 import IntelPanel from './IntelPanel';
+import { PollView, QuizView, BreakView } from './SenseiActivityOverlays';
 
 function JoinStateView({ status, error, notStartedAt, joinWithPassword, onLeave }) {
   const [password, setPassword] = useState('');
@@ -180,6 +181,35 @@ export default function MeetingRoom({ roomId, userName, roomOptions, localStream
     return effective;
   });
 
+  const [activePoll, setActivePoll] = useState(null);
+  const [activeQuiz, setActiveQuiz] = useState(null);
+  const [activeBreak, setActiveBreak] = useState(null);
+
+  useEffect(() => {
+    const s = socketRef?.current;
+    if (!inCall || !s) return;
+    const onPoll = (p) => setActivePoll(p);
+    const onPollEnd = () => setActivePoll(null);
+    const onQuiz = (p) => setActiveQuiz(p);
+    const onQuizEnd = () => setActiveQuiz(null);
+    const onBreak = (p) => setActiveBreak(p);
+    const onBreakEnd = () => setActiveBreak(null);
+    s.on('sensei-poll', onPoll);
+    s.on('sensei-poll-end', onPollEnd);
+    s.on('sensei-quiz', onQuiz);
+    s.on('sensei-quiz-end', onQuizEnd);
+    s.on('sensei-break', onBreak);
+    s.on('sensei-break-end', onBreakEnd);
+    return () => {
+      s.off('sensei-poll', onPoll);
+      s.off('sensei-poll-end', onPollEnd);
+      s.off('sensei-quiz', onQuiz);
+      s.off('sensei-quiz-end', onQuizEnd);
+      s.off('sensei-break', onBreak);
+      s.off('sensei-break-end', onBreakEnd);
+    };
+  }, [inCall]);
+
   useEffect(() => {
     if (theme === 'auto') {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -269,6 +299,32 @@ export default function MeetingRoom({ roomId, userName, roomOptions, localStream
 
   return (
     <div className="room" data-theme={resolvedTheme}>
+      {activePoll && (
+        <PollView
+          payload={activePoll}
+          socketRef={socketRef}
+          myId={myId}
+          isHost={isHost}
+          onEnd={() => setActivePoll(null)}
+        />
+      )}
+      {activeQuiz && (
+        <QuizView
+          payload={activeQuiz}
+          socketRef={socketRef}
+          myId={myId}
+          isHost={isHost}
+          onEnd={() => setActiveQuiz(null)}
+        />
+      )}
+      {activeBreak && (
+        <BreakView
+          payload={activeBreak}
+          onEnd={() => setActiveBreak(null)}
+          isHost={isHost}
+          socketRef={socketRef}
+        />
+      )}
       <header className="room-header">
         <span className="room-id">{resolvedTheme === 'matrix' ? 'Simulation' : 'Sensei'}: {roomId}</span>
         <div className="room-header-actions">
@@ -366,7 +422,20 @@ export default function MeetingRoom({ roomId, userName, roomOptions, localStream
         </div>
         {isHost && meshMode && analyticsVisible && (
           <div className="room-intel-panel">
-            <IntelPanel participants={intelParticipants} theme={resolvedTheme} />
+            <IntelPanel
+              participants={intelParticipants}
+              theme={resolvedTheme}
+              socketRef={socketRef}
+              onPollLaunch={(payload) => {
+                if (socketRef?.current) socketRef.current.emit('sensei-poll', payload);
+              }}
+              onQuizStart={(payload) => {
+                if (socketRef?.current) socketRef.current.emit('sensei-quiz', payload);
+              }}
+              onBreakStart={(payload) => {
+                if (socketRef?.current) socketRef.current.emit('sensei-break', payload);
+              }}
+            />
           </div>
         )}
       </div>

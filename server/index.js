@@ -288,6 +288,62 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('spotlight-changed', peerId || null);
   });
 
+  socket.on('sensei-poll', (payload) => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-poll', payload);
+  });
+
+  socket.on('sensei-poll-vote', (payload) => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId) return;
+    io.to(roomId).emit('sensei-poll-vote', {
+      ...payload,
+      voterId: socket.id,
+      voterName: socket.userName,
+    });
+  });
+
+  socket.on('sensei-poll-end', () => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-poll-end');
+  });
+
+  socket.on('sensei-quiz', (payload) => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-quiz', payload);
+  });
+
+  socket.on('sensei-quiz-answer', (payload) => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId) return;
+    io.to(roomId).emit('sensei-quiz-answer', {
+      ...payload,
+      participantId: socket.id,
+      participantName: socket.userName,
+    });
+  });
+
+  socket.on('sensei-quiz-end', () => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-quiz-end');
+  });
+
+  socket.on('sensei-break', (payload) => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-break', { ...payload, startTime: Date.now() });
+  });
+
+  socket.on('sensei-break-end', () => {
+    const [roomId] = getRoomBySocket(socket);
+    if (!roomId || !isHost(socket)) return;
+    io.to(roomId).emit('sensei-break-end');
+  });
+
   const INTEL_HISTORY_SAMPLE_INTERVAL_MS = 1000;
   const INTEL_MAX_HISTORY_LENGTH = 24 * 60 * 60;
 

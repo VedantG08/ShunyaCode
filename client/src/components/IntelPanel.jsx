@@ -351,7 +351,7 @@ const DEFAULT_VISIBLE = new Set(EMOTION_SERIES.map((s) => s.key));
 
 const AGGREGATE_VALUE = "";
 
-export default function IntelPanel({ participants, theme = "dark" }) {
+export default function IntelPanel({ participants, theme = "dark", socketRef, onPollLaunch, onQuizStart, onBreakStart }) {
   const [selectedId, setSelectedId] = useState(AGGREGATE_VALUE);
   const [visibleSeries, setVisibleSeries] = useState(() => new Set(DEFAULT_VISIBLE));
   const [showWhyAlert, setShowWhyAlert] = useState(false);
@@ -653,19 +653,47 @@ export default function IntelPanel({ participants, theme = "dark" }) {
         <LaunchPollModal
           participants={participants}
           onClose={() => setPollOpen(false)}
-          onLaunch={(payload) => { console.log("Launch poll", payload); setPollOpen(false); }}
+          onLaunch={(payload) => {
+            if (payload?.question && payload?.options?.length >= 2 && onPollLaunch) {
+              onPollLaunch({
+                id: Date.now(),
+                question: payload.question,
+                options: payload.options,
+                voteType: payload.voteType || "single",
+              });
+            }
+            setPollOpen(false);
+          }}
         />
       )}
       {quizOpen && (
         <StartQuizModal
           onClose={() => setQuizOpen(false)}
-          onStart={(payload) => { console.log("Start quiz", payload); setQuizOpen(false); }}
+          onStart={(payload) => {
+            if (payload?.question && payload?.options?.length >= 2 && payload?.timeSeconds != null && onQuizStart) {
+              onQuizStart({
+                id: Date.now(),
+                question: payload.question,
+                options: payload.options,
+                timeSeconds: payload.timeSeconds,
+              });
+            }
+            setQuizOpen(false);
+          }}
         />
       )}
       {breakOpen && (
         <TakeBreakModal
           onClose={() => setBreakOpen(false)}
-          onStart={(payload) => { console.log("Start break", payload); setBreakOpen(false); }}
+          onStart={(payload) => {
+            if (payload && onBreakStart) {
+              onBreakStart({
+                durationMinutes: payload.durationMinutes ?? 5,
+                soundEnabled: payload.soundEnabled !== false,
+              });
+            }
+            setBreakOpen(false);
+          }}
         />
       )}
 
