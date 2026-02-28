@@ -1,0 +1,12 @@
+LICENSE
+LICENSE.txt
+README.md
+setup.cfg
+setup.py
+hsemotion_onnx/__init__.py
+hsemotion_onnx/facial_emotions.py
+hsemotion_onnx.egg-info/PKG-INFO
+hsemotion_onnx.egg-info/SOURCES.txt
+hsemotion_onnx.egg-info/dependency_links.txt
+hsemotion_onnx.egg-info/requires.txt
+hsemotion_onnx.egg-info/top_level.txt
